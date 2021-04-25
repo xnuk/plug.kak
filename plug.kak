@@ -1,7 +1,7 @@
 try %{ require-module plug } catch %{
 
 provide-module plug %{
-	declare-option str-list plug_modules
+	declare-option -hidden str-list plug_modules
 	hook -once global KakBegin '.*' %{
 		nop %sh{(
 			plugpath="$kak_config/plugins"
