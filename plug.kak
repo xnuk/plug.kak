@@ -50,10 +50,12 @@ provide-module plug %{
 
 						cd "$path"
 						git fetch origin
-						if [ "$ref" != "$repo" ]; then
-							git switch --detach "origin/$ref" ||
-							git switch --detach "$ref"
+						if [ "$ref" = "$repo" ]; then
+							ref=HEAD
 						fi
+
+						git switch --detach "origin/$ref" ||
+						git switch --detach "$ref"
 					) &
 					fi
 				done
