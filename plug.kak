@@ -2,6 +2,8 @@ try %{ require-module plug } catch %{
 
 provide-module plug %{
 	declare-option -hidden str-list plug_modules
+	declare-option -hidden str-list plug_eager_modules
+
 	hook -once global KakBegin '.*' %{
 		nop %sh{(
 			plugpath="$kak_config/plugins"
@@ -20,6 +22,12 @@ provide-module plug %{
 				fi
 			done
 		) > /dev/null 2>&1 < /dev/null &}
+
+		set-option -add global plug_modules %opt{plug_eager_modules}
+
+		unalias global plug! plug-force
+		define-command -override -hidden -params 100 plug-register %{}
+		define-command -override -hidden -params 100 plug-force %{}
 
 		define-command -override -params 0 plug %{
 			nop %sh{(
@@ -63,25 +71,48 @@ provide-module plug %{
 		}
 	}
 
-	define-command -params 1..2 plug %{
+	define-command -hidden -params 2..3 plug-register %{
 		eval %sh{
-			ops="$1"
-			body="$2"
+			force="$1"
+			ops="$2"
+			body="$3"
 
-			a="${1%#*}"
+			a="${2%#*}"
 			a="${a##*/}"
 			a="${a##*:}"
 			a="${a%%.*}"
 			a="${a#kakoune-}"
 			a="${a#kak-}"
 
-			printf 'set-option -add global plug_modules %%{%s#%s}\n' "$a" "$ops"
+			if [ "$force" = "yes" ]; then
+				printf 'set-option -add global plug_eager_modules %%{%s#%s}\n' "$a" "$ops"
+			else
+				printf 'set-option -add global plug_modules %%{%s#%s}\n' "$a" "$ops"
+			fi
 
 			if [ -n "$body" ]; then
 				printf 'hook -once global ModuleLoaded %s %%{%s}\n' "$a" "$body"
 			fi
+
+			plugpath="$kak_config/plugins"
+			mod="$a"
+			path="$plugpath/$mod"
+
+			if [ "$force" = "yes" -a -d "$path" ]; then
+				fd --type=f -e kak . "$path" -X cat
+			fi
 		}
 	}
+
+	define-command -params 1..2 plug %{
+		plug-register "no" %arg{@}
+	}
+
+	define-command -hidden -params 1..2 plug-force %{
+		plug-register "yes" %arg{@}
+	}
+
+	alias global plug! plug-force
 }
 
 }
