@@ -15,7 +15,10 @@ provide-module plug %{
 				if [ -d "$path" ]; then
 				(
 					(
-						fd --type=f -e kak . "$path" -X cat
+						fd \
+							--exclude=test/ --exclude=tests/ --exclude=spec/ \
+							--exclude=test.kak --exclude=tests.kak --exclude=spec.kak \
+							--type=f -e kak . "$path" -X cat
 						echo "try %{ require-module $mod } catch %{ provide-module $mod nop; require-module $mod }"
 					) | kak -p "$kak_session" > /dev/null 2>&1
 				) &
